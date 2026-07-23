@@ -129,7 +129,6 @@ bot/
 
 ## Known limitations (MVP)
 
-- Group/member/search-result lists show only the first 30 entries without pagination — worth adding for very large realms.
 - Only top-level groups are supported (no nested subgroups).
 - Notifications about new users and logins are polling-based, not instant on event; delay up to `POLL_INTERVAL_SECONDS`. Instant notifications would need a custom Keycloak Event Listener SPI on the server itself — a separate task if it's ever needed.
 - Login polling fetches the last 200 events per cycle; if more than 200 logins happen between polls, some notifications could be skipped (unlikely for a personal/small realm).

@@ -40,11 +40,15 @@ class KeycloakService:
             first += page_size
         return users[:max_results]
 
-    async def list_users_page(self, first: int, max_results: int = 20) -> list[dict]:
-        return await asyncio.to_thread(self._admin.get_users, {"first": first, "max": max_results})
+    async def list_users_page(self, first: int, max_results: int = 20, search: str | None = None) -> list[dict]:
+        query = {"first": first, "max": max_results}
+        if search:
+            query["search"] = search
+        return await asyncio.to_thread(self._admin.get_users, query)
 
-    async def count_users(self) -> int:
-        return await asyncio.to_thread(self._admin.users_count)
+    async def count_users(self, search: str | None = None) -> int:
+        query = {"search": search} if search else None
+        return await asyncio.to_thread(self._admin.users_count, query)
 
     async def get_user(self, user_id: str) -> dict:
         return await asyncio.to_thread(self._admin.get_user, user_id)
@@ -58,14 +62,20 @@ class KeycloakService:
     async def get_login_events(self, max_results: int = 200) -> list[dict]:
         return await asyncio.to_thread(self._admin.get_events, {"type": "LOGIN", "max": max_results})
 
-    async def list_groups(self) -> list[dict]:
-        return await asyncio.to_thread(self._admin.get_groups)
+    async def list_groups_page(self, first: int, max_results: int = 30) -> list[dict]:
+        return await asyncio.to_thread(self._admin.get_groups, {"first": first, "max": max_results})
+
+    async def count_groups(self) -> int:
+        result = await asyncio.to_thread(self._admin.groups_count)
+        return result.get("count", 0)
 
     async def get_group(self, group_id: str) -> dict:
         return await asyncio.to_thread(self._admin.get_group, group_id)
 
-    async def get_group_members(self, group_id: str, max_results: int = 500) -> list[dict]:
-        return await asyncio.to_thread(self._admin.get_group_members, group_id, {"max": max_results})
+    async def get_group_members(self, group_id: str, first: int = 0, max_results: int = 500) -> list[dict]:
+        return await asyncio.to_thread(
+            self._admin.get_group_members, group_id, {"first": first, "max": max_results}
+        )
 
     async def create_group(self, name: str) -> str:
         return await asyncio.to_thread(self._admin.create_group, {"name": name})
