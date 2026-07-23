@@ -49,12 +49,13 @@ async def poll_login_events(
     admin_ids: set[int],
     interval_seconds: int,
 ) -> None:
-    if state.last_time == 0:
+    while state.last_time == 0:
         try:
             recent = await kc.get_login_events(max_results=1)
         except Exception:
-            logger.exception("Failed to fetch initial Keycloak login events")
-            recent = []
+            logger.exception("Failed to fetch initial Keycloak login events, will retry next cycle")
+            await asyncio.sleep(interval_seconds)
+            continue
         state.advance(recent[0]["time"] if recent else 1)
         logger.info("Seeded login event baseline, notifications start from now on")
 
