@@ -4,7 +4,15 @@ from aiogram import F, Router
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import BotCommand, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import (
+    BotCommand,
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    Message,
+    ReplyKeyboardMarkup,
+)
 
 from .callback_cache import CallbackCache
 from .keycloak_client import KeycloakService
@@ -27,6 +35,20 @@ BOT_COMMANDS = [
     BotCommand(command="help", description="Показать помощь"),
 ]
 
+BTN_GROUPS = "📋 Группы"
+BTN_USERS = "👥 Пользователи"
+BTN_SETTINGS = "⚙️ Настройки"
+BTN_HELP = "❓ Помощь"
+
+MAIN_KEYBOARD = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text=BTN_GROUPS), KeyboardButton(text=BTN_USERS)],
+        [KeyboardButton(text=BTN_SETTINGS), KeyboardButton(text=BTN_HELP)],
+    ],
+    resize_keyboard=True,
+    is_persistent=True,
+)
+
 
 class AddUserState(StatesGroup):
     waiting_query = State()
@@ -43,13 +65,34 @@ def build_router() -> Router:
             "/users — список всех пользователей\n"
             "/newgroup Название — создать группу\n"
             "/settings — включить/выключить уведомления\n"
-            "/cancel — отменить текущее действие"
+            "/cancel — отменить текущее действие",
+            reply_markup=MAIN_KEYBOARD,
         )
 
     @router.message(Command("cancel"))
     async def cmd_cancel(message: Message, state: FSMContext) -> None:
         await state.clear()
         await message.answer("Отменено.")
+
+    @router.message(F.text == BTN_GROUPS)
+    async def btn_groups(message: Message, kc: KeycloakService, cache: CallbackCache, state: FSMContext) -> None:
+        await state.clear()
+        await _send_groups_list(message, kc, cache)
+
+    @router.message(F.text == BTN_USERS)
+    async def btn_users(message: Message, kc: KeycloakService, cache: CallbackCache, state: FSMContext) -> None:
+        await state.clear()
+        await _send_users_list(message, kc, cache, first=0)
+
+    @router.message(F.text == BTN_SETTINGS)
+    async def btn_settings(message: Message, settings: SettingsStore, state: FSMContext) -> None:
+        await state.clear()
+        await _send_settings(message, settings)
+
+    @router.message(F.text == BTN_HELP)
+    async def btn_help(message: Message, state: FSMContext) -> None:
+        await state.clear()
+        await cmd_start(message)
 
     @router.message(Command("groups"))
     async def cmd_groups(message: Message, kc: KeycloakService, cache: CallbackCache) -> None:
