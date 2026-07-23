@@ -85,7 +85,7 @@ async def _notify_new_user(bot: Bot, admin_ids: set[int], user: dict) -> None:
     username = user.get("username", "—")
     email = user.get("email", "—")
     text = (
-        "🆕 <b>Новый пользователь в Keycloak</b>\n"
+        "🆕 <b>New Keycloak user</b>\n"
         f"Username: {username}\n"
         f"Email: {email}\n"
         f"ID: <code>{user['id']}</code>"
@@ -110,10 +110,10 @@ async def _notify_login(bot: Bot, kc: KeycloakService, admin_ids: set[int], even
     when = datetime.fromtimestamp(event["time"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     ip = event.get("ipAddress", "—")
     text = (
-        "🔐 <b>Вход в Keycloak</b>\n"
-        f"Пользователь: {username}\n"
+        "🔐 <b>Keycloak login</b>\n"
+        f"User: {username}\n"
         f"IP: {ip}\n"
-        f"Время: {when}"
+        f"Time: {when}"
     )
     for chat_id in admin_ids:
         try:

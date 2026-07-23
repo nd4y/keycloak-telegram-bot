@@ -22,23 +22,23 @@ MAX_LIST = 30
 PAGE_SIZE = 20
 
 SETTINGS_LABELS = {
-    "notify_new_users": "Новые пользователи",
-    "notify_logins": "Входы пользователей",
+    "notify_new_users": "New users",
+    "notify_logins": "User logins",
 }
 
 BOT_COMMANDS = [
-    BotCommand(command="groups", description="Список групп и участников"),
-    BotCommand(command="users", description="Список всех пользователей"),
-    BotCommand(command="newgroup", description="Создать группу"),
-    BotCommand(command="settings", description="Включить/выключить уведомления"),
-    BotCommand(command="cancel", description="Отменить текущее действие"),
-    BotCommand(command="help", description="Показать помощь"),
+    BotCommand(command="groups", description="List groups and members"),
+    BotCommand(command="users", description="List all users"),
+    BotCommand(command="newgroup", description="Create a group"),
+    BotCommand(command="settings", description="Toggle notifications"),
+    BotCommand(command="cancel", description="Cancel the current action"),
+    BotCommand(command="help", description="Show help"),
 ]
 
-BTN_GROUPS = "📋 Группы"
-BTN_USERS = "👥 Пользователи"
-BTN_SETTINGS = "⚙️ Настройки"
-BTN_HELP = "❓ Помощь"
+BTN_GROUPS = "📋 Groups"
+BTN_USERS = "👥 Users"
+BTN_SETTINGS = "⚙️ Settings"
+BTN_HELP = "❓ Help"
 
 MAIN_KEYBOARD = ReplyKeyboardMarkup(
     keyboard=[
@@ -60,19 +60,19 @@ def build_router() -> Router:
     @router.message(Command("start", "help"))
     async def cmd_start(message: Message) -> None:
         await message.answer(
-            "Бот управления группами Keycloak.\n\n"
-            "/groups — список групп и участников\n"
-            "/users — список всех пользователей\n"
-            "/newgroup Название — создать группу\n"
-            "/settings — включить/выключить уведомления\n"
-            "/cancel — отменить текущее действие",
+            "Keycloak group management bot.\n\n"
+            "/groups — list groups and members\n"
+            "/users — list all users\n"
+            "/newgroup Name — create a group\n"
+            "/settings — toggle notifications\n"
+            "/cancel — cancel the current action",
             reply_markup=MAIN_KEYBOARD,
         )
 
     @router.message(Command("cancel"))
     async def cmd_cancel(message: Message, state: FSMContext) -> None:
         await state.clear()
-        await message.answer("Отменено.")
+        await message.answer("Cancelled.")
 
     @router.message(F.text == BTN_GROUPS)
     async def btn_groups(message: Message, kc: KeycloakService, cache: CallbackCache, state: FSMContext) -> None:
@@ -112,7 +112,7 @@ def build_router() -> Router:
     async def cb_open_user(query: CallbackQuery, kc: KeycloakService, cache: CallbackCache) -> None:
         pair = cache.get(query.data.split(":", 1)[1])
         if pair is None:
-            await query.answer("Устарело, откройте /users заново.", show_alert=True)
+            await query.answer("Expired, reopen /users.", show_alert=True)
             return
         user_id, first = pair
         await _send_user_view(query.message, kc, cache, user_id, first, edit=True)
@@ -122,18 +122,18 @@ def build_router() -> Router:
     async def cb_user_remove_group(query: CallbackQuery, kc: KeycloakService, cache: CallbackCache) -> None:
         triple = cache.get(query.data.split(":", 1)[1])
         if triple is None:
-            await query.answer("Устарело, откройте пользователя заново.", show_alert=True)
+            await query.answer("Expired, reopen the user.", show_alert=True)
             return
         user_id, group_id, first = triple
         await kc.remove_user_from_group(user_id, group_id)
-        await query.answer("Удалён из группы.")
+        await query.answer("Removed from group.")
         await _send_user_view(query.message, kc, cache, user_id, first, edit=True)
 
     @router.callback_query(F.data.startswith("uag:"))
     async def cb_user_add_group_start(query: CallbackQuery, kc: KeycloakService, cache: CallbackCache) -> None:
         pair = cache.get(query.data.split(":", 1)[1])
         if pair is None:
-            await query.answer("Устарело.", show_alert=True)
+            await query.answer("Expired.", show_alert=True)
             return
         user_id, first = pair
         await _send_group_picker(query.message, kc, cache, user_id, first, edit=True)
@@ -143,24 +143,24 @@ def build_router() -> Router:
     async def cb_user_add_group_pick(query: CallbackQuery, kc: KeycloakService, cache: CallbackCache) -> None:
         triple = cache.get(query.data.split(":", 1)[1])
         if triple is None:
-            await query.answer("Устарело.", show_alert=True)
+            await query.answer("Expired.", show_alert=True)
             return
         user_id, group_id, first = triple
         await kc.add_user_to_group(user_id, group_id)
-        await query.answer("Добавлен в группу.")
+        await query.answer("Added to group.")
         await _send_user_view(query.message, kc, cache, user_id, first, edit=True)
 
     @router.callback_query(F.data.startswith("ue:"))
     async def cb_user_toggle_enabled(query: CallbackQuery, kc: KeycloakService, cache: CallbackCache) -> None:
         pair = cache.get(query.data.split(":", 1)[1])
         if pair is None:
-            await query.answer("Устарело.", show_alert=True)
+            await query.answer("Expired.", show_alert=True)
             return
         user_id, first = pair
         user = await kc.get_user(user_id)
         new_enabled = not user.get("enabled", True)
         await kc.set_user_enabled(user_id, new_enabled)
-        await query.answer("Пользователь включён." if new_enabled else "Пользователь отключён.")
+        await query.answer("User enabled." if new_enabled else "User disabled.")
         await _send_user_view(query.message, kc, cache, user_id, first, edit=True)
 
     @router.message(Command("settings"))
@@ -171,17 +171,17 @@ def build_router() -> Router:
     async def cb_toggle_setting(query: CallbackQuery, settings: SettingsStore) -> None:
         key = query.data.split(":", 1)[1]
         settings.set(key, not settings.get(key))
-        await query.answer("Сохранено." if settings.persist else "Изменено (сбросится при рестарте контейнера).")
+        await query.answer("Saved." if settings.persist else "Changed (resets on container restart).")
         await _send_settings(query.message, settings, edit=True)
 
     @router.message(Command("newgroup"))
     async def cmd_newgroup(message: Message, command: CommandObject, kc: KeycloakService) -> None:
         name = (command.args or "").strip()
         if not name:
-            await message.answer("Использование: /newgroup Название группы")
+            await message.answer("Usage: /newgroup Group name")
             return
         await kc.create_group(name)
-        await message.answer(f"Группа «{name}» создана.")
+        await message.answer(f'Group "{name}" created.')
 
     @router.callback_query(F.data == "groups")
     async def cb_groups(query: CallbackQuery, kc: KeycloakService, cache: CallbackCache) -> None:
@@ -192,7 +192,7 @@ def build_router() -> Router:
     async def cb_open_group(query: CallbackQuery, kc: KeycloakService, cache: CallbackCache) -> None:
         group_id = cache.get(query.data.split(":", 1)[1])
         if group_id is None:
-            await query.answer("Список устарел, откройте /groups заново.", show_alert=True)
+            await query.answer("List expired, reopen /groups.", show_alert=True)
             return
         await _send_group_view(query.message, kc, cache, group_id, edit=True)
         await query.answer()
@@ -201,11 +201,11 @@ def build_router() -> Router:
     async def cb_remove_member(query: CallbackQuery, kc: KeycloakService, cache: CallbackCache) -> None:
         pair = cache.get(query.data.split(":", 1)[1])
         if pair is None:
-            await query.answer("Устарело, откройте группу заново.", show_alert=True)
+            await query.answer("Expired, reopen the group.", show_alert=True)
             return
         group_id, user_id = pair
         await kc.remove_user_from_group(user_id, group_id)
-        await query.answer("Удалён из группы.")
+        await query.answer("Removed from group.")
         await _send_group_view(query.message, kc, cache, group_id, edit=True)
 
     @router.callback_query(F.data.startswith("gd:"))
@@ -213,36 +213,36 @@ def build_router() -> Router:
         token = query.data.split(":", 1)[1]
         group_id = cache.get(token)
         if group_id is None:
-            await query.answer("Устарело.", show_alert=True)
+            await query.answer("Expired.", show_alert=True)
             return
         confirm_token = cache.put(group_id)
         kb = InlineKeyboardMarkup(inline_keyboard=[[
-            InlineKeyboardButton(text="✅ Да, удалить", callback_data=f"gdc:{confirm_token}"),
-            InlineKeyboardButton(text="⬅️ Отмена", callback_data=f"g:{token}"),
+            InlineKeyboardButton(text="✅ Yes, delete", callback_data=f"gdc:{confirm_token}"),
+            InlineKeyboardButton(text="⬅️ Cancel", callback_data=f"g:{token}"),
         ]])
-        await query.message.edit_text("Удалить эту группу без возможности восстановления?", reply_markup=kb)
+        await query.message.edit_text("Delete this group permanently?", reply_markup=kb)
         await query.answer()
 
     @router.callback_query(F.data.startswith("gdc:"))
     async def cb_delete_group_confirm(query: CallbackQuery, kc: KeycloakService, cache: CallbackCache) -> None:
         group_id = cache.get(query.data.split(":", 1)[1])
         if group_id is None:
-            await query.answer("Устарело.", show_alert=True)
+            await query.answer("Expired.", show_alert=True)
             return
         await kc.delete_group(group_id)
-        await query.answer("Группа удалена.")
+        await query.answer("Group deleted.")
         await _send_groups_list(query.message, kc, cache, edit=True)
 
     @router.callback_query(F.data.startswith("ga:"))
     async def cb_add_user_start(query: CallbackQuery, cache: CallbackCache, state: FSMContext) -> None:
         group_id = cache.get(query.data.split(":", 1)[1])
         if group_id is None:
-            await query.answer("Устарело.", show_alert=True)
+            await query.answer("Expired.", show_alert=True)
             return
         await state.update_data(group_id=group_id)
         await state.set_state(AddUserState.waiting_query)
         await query.message.answer(
-            "Введите часть username или email пользователя для поиска (/cancel — отмена)."
+            "Type part of a username or email to search (/cancel to abort)."
         )
         await query.answer()
 
@@ -252,11 +252,11 @@ def build_router() -> Router:
         group_id = data.get("group_id")
         search = (message.text or "").strip()
         if not search:
-            await message.answer("Пустой запрос, попробуйте ещё раз.")
+            await message.answer("Empty query, try again.")
             return
         users = await kc.list_users(search=search, max_results=MAX_LIST)
         if not users:
-            await message.answer("Никого не нашлось. Попробуйте другой запрос или /cancel.")
+            await message.answer("No matches. Try a different query or /cancel.")
             return
         buttons = []
         for user in users[:MAX_LIST]:
@@ -264,18 +264,18 @@ def build_router() -> Router:
             label = user.get("username") or user.get("email") or user["id"]
             buttons.append([InlineKeyboardButton(text=label, callback_data=f"up:{token}")])
         kb = InlineKeyboardMarkup(inline_keyboard=buttons)
-        await message.answer("Выберите пользователя:", reply_markup=kb)
+        await message.answer("Pick a user:", reply_markup=kb)
 
     @router.callback_query(F.data.startswith("up:"))
     async def cb_pick_user(query: CallbackQuery, kc: KeycloakService, cache: CallbackCache, state: FSMContext) -> None:
         pair = cache.get(query.data.split(":", 1)[1])
         if pair is None:
-            await query.answer("Устарело.", show_alert=True)
+            await query.answer("Expired.", show_alert=True)
             return
         group_id, user_id = pair
         await kc.add_user_to_group(user_id, group_id)
         await state.clear()
-        await query.answer("Добавлен в группу.")
+        await query.answer("Added to group.")
         await _send_group_view(query.message, kc, cache, group_id, edit=False)
 
     return router
@@ -288,7 +288,7 @@ async def _send_users_list(
     page = await kc.list_users_page(first, PAGE_SIZE)
 
     if not page:
-        text = "Пользователей нет." if first == 0 else "Дальше пользователей нет."
+        text = "No users." if first == 0 else "No more users."
         await (message.edit_text(text) if edit else message.answer(text))
         return
 
@@ -300,14 +300,14 @@ async def _send_users_list(
 
     nav_row = []
     if first > 0:
-        nav_row.append(InlineKeyboardButton(text="◀️ Назад", callback_data=f"ul:{max(0, first - PAGE_SIZE)}"))
+        nav_row.append(InlineKeyboardButton(text="◀️ Back", callback_data=f"ul:{max(0, first - PAGE_SIZE)}"))
     if first + len(page) < total:
-        nav_row.append(InlineKeyboardButton(text="Дальше ▶️", callback_data=f"ul:{first + PAGE_SIZE}"))
+        nav_row.append(InlineKeyboardButton(text="Next ▶️", callback_data=f"ul:{first + PAGE_SIZE}"))
     if nav_row:
         buttons.append(nav_row)
 
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
-    text = f"Пользователи {first + 1}–{first + len(page)} из {total}:"
+    text = f"Users {first + 1}–{first + len(page)} of {total}:"
     await (message.edit_text(text, reply_markup=kb) if edit else message.answer(text, reply_markup=kb))
 
 
@@ -319,8 +319,8 @@ async def _send_user_view(
 
     username = user.get("username") or user.get("email") or user_id
     email = user.get("email", "—")
-    status = "включён" if user.get("enabled", True) else "отключён"
-    lines = [f"Пользователь: {username}", f"Email: {email}", f"Статус: {status}", "", "Группы:"]
+    status = "enabled" if user.get("enabled", True) else "disabled"
+    lines = [f"User: {username}", f"Email: {email}", f"Status: {status}", "", "Groups:"]
 
     buttons = []
     if groups:
@@ -329,14 +329,14 @@ async def _send_user_view(
             token = cache.put((user_id, group["id"], first))
             buttons.append([InlineKeyboardButton(text=f"❌ {group['name']}", callback_data=f"urg:{token}")])
     else:
-        lines.append("(нет групп)")
+        lines.append("(no groups)")
 
     add_token = cache.put((user_id, first))
     toggle_token = cache.put((user_id, first))
-    toggle_label = "🚫 Отключить" if user.get("enabled", True) else "✅ Включить"
-    buttons.append([InlineKeyboardButton(text="➕ Добавить в группу", callback_data=f"uag:{add_token}")])
+    toggle_label = "🚫 Disable" if user.get("enabled", True) else "✅ Enable"
+    buttons.append([InlineKeyboardButton(text="➕ Add to group", callback_data=f"uag:{add_token}")])
     buttons.append([InlineKeyboardButton(text=toggle_label, callback_data=f"ue:{toggle_token}")])
-    buttons.append([InlineKeyboardButton(text="⬅️ К списку пользователей", callback_data=f"ul:{first}")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Back to user list", callback_data=f"ul:{first}")])
 
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
     text = "\n".join(lines)
@@ -348,7 +348,7 @@ async def _send_group_picker(
 ) -> None:
     groups = await kc.list_groups()
     if not groups:
-        text = "Групп пока нет. Создайте через /newgroup <название>."
+        text = "No groups yet. Create one with /newgroup <name>."
         await (message.edit_text(text) if edit else message.answer(text))
         return
 
@@ -358,17 +358,17 @@ async def _send_group_picker(
         buttons.append([InlineKeyboardButton(text=group["name"], callback_data=f"uagpick:{token}")])
 
     back_token = cache.put((user_id, first))
-    buttons.append([InlineKeyboardButton(text="⬅️ Отмена", callback_data=f"u:{back_token}")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Cancel", callback_data=f"u:{back_token}")])
 
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
-    text = "Выберите группу:"
+    text = "Pick a group:"
     await (message.edit_text(text, reply_markup=kb) if edit else message.answer(text, reply_markup=kb))
 
 
 async def _send_groups_list(message: Message, kc: KeycloakService, cache: CallbackCache, edit: bool = False) -> None:
     groups = await kc.list_groups()
     if not groups:
-        text = "Групп пока нет. Создайте через /newgroup <название>."
+        text = "No groups yet. Create one with /newgroup <name>."
         await (message.edit_text(text) if edit else message.answer(text))
         return
 
@@ -377,7 +377,7 @@ async def _send_groups_list(message: Message, kc: KeycloakService, cache: Callba
         token = cache.put(group["id"])
         buttons.append([InlineKeyboardButton(text=group["name"], callback_data=f"g:{token}")])
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
-    text = f"Группы ({len(groups)}):"
+    text = f"Groups ({len(groups)}):"
     await (message.edit_text(text, reply_markup=kb) if edit else message.answer(text, reply_markup=kb))
 
 
@@ -387,7 +387,7 @@ async def _send_group_view(
     group = await kc.get_group(group_id)
     members = await kc.get_group_members(group_id)
 
-    lines = [f"Группа: {group['name']}", f"Участников: {len(members)}", ""]
+    lines = [f"Group: {group['name']}", f"Members: {len(members)}", ""]
     buttons = []
     for member in members[:MAX_LIST]:
         label = member.get("username") or member.get("email") or member["id"]
@@ -395,14 +395,14 @@ async def _send_group_view(
         token = cache.put((group_id, member["id"]))
         buttons.append([InlineKeyboardButton(text=f"❌ {label}", callback_data=f"mr:{token}")])
     if len(members) > MAX_LIST:
-        lines.append(f"…и ещё {len(members) - MAX_LIST}")
+        lines.append(f"…and {len(members) - MAX_LIST} more")
 
     add_token = cache.put(group_id)
     del_token = cache.put(group_id)
-    buttons.append([InlineKeyboardButton(text="➕ Добавить пользователя", callback_data=f"ga:{add_token}")])
+    buttons.append([InlineKeyboardButton(text="➕ Add user", callback_data=f"ga:{add_token}")])
     buttons.append([
-        InlineKeyboardButton(text="🗑 Удалить группу", callback_data=f"gd:{del_token}"),
-        InlineKeyboardButton(text="⬅️ К списку групп", callback_data="groups"),
+        InlineKeyboardButton(text="🗑 Delete group", callback_data=f"gd:{del_token}"),
+        InlineKeyboardButton(text="⬅️ Back to groups", callback_data="groups"),
     ])
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
     text = "\n".join(lines)
@@ -410,19 +410,19 @@ async def _send_group_view(
 
 
 async def _send_settings(message: Message, settings: SettingsStore, edit: bool = False) -> None:
-    lines = ["Настройки уведомлений:", ""]
+    lines = ["Notification settings:", ""]
     buttons = []
     for key, label in SETTINGS_LABELS.items():
         enabled = settings.get(key)
-        lines.append(f"• {label}: {'✅ включено' if enabled else '🚫 выключено'}")
-        toggle_label = f"🚫 Выключить: {label}" if enabled else f"✅ Включить: {label}"
+        lines.append(f"• {label}: {'✅ on' if enabled else '🚫 off'}")
+        toggle_label = f"🚫 Turn off: {label}" if enabled else f"✅ Turn on: {label}"
         buttons.append([InlineKeyboardButton(text=toggle_label, callback_data=f"st:{key}")])
 
     lines.append("")
     lines.append(
-        "Сохраняется между рестартами контейнера."
+        "Persists across container restarts."
         if settings.persist
-        else "Не сохраняется между рестартами контейнера (PERSIST_SETTINGS выключен)."
+        else "Does not persist across container restarts (PERSIST_SETTINGS is off)."
     )
 
     kb = InlineKeyboardMarkup(inline_keyboard=buttons)
