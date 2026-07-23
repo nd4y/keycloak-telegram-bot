@@ -1,0 +1,22 @@
+services:
+  bot:
+    image: keycloak-telegram-bot:latest
+    container_name: keycloak-telegram-bot
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      ADMIN_CHAT_IDS: ${ADMIN_CHAT_IDS}
+      KEYCLOAK_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+      KEYCLOAK_VERIFY_SSL: ${KEYCLOAK_VERIFY_SSL:-true}
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-60}
+      NOTIFY_NEW_USERS: ${NOTIFY_NEW_USERS:-true}
+      NOTIFY_LOGINS: ${NOTIFY_LOGINS:-false}
+      PERSIST_SETTINGS: ${PERSIST_SETTINGS:-false}
+    volumes:
+      - bot_data:/app/data
+
+volumes:
+  bot_data:
