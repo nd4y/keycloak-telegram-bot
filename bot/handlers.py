@@ -4,7 +4,7 @@ from aiogram import F, Router
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import BotCommand, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from .callback_cache import CallbackCache
 from .keycloak_client import KeycloakService
@@ -17,6 +17,15 @@ SETTINGS_LABELS = {
     "notify_new_users": "Новые пользователи",
     "notify_logins": "Входы пользователей",
 }
+
+BOT_COMMANDS = [
+    BotCommand(command="groups", description="Список групп и участников"),
+    BotCommand(command="users", description="Список всех пользователей"),
+    BotCommand(command="newgroup", description="Создать группу"),
+    BotCommand(command="settings", description="Включить/выключить уведомления"),
+    BotCommand(command="cancel", description="Отменить текущее действие"),
+    BotCommand(command="help", description="Показать помощь"),
+]
 
 
 class AddUserState(StatesGroup):

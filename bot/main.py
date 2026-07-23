@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 from .callback_cache import CallbackCache
 from .config import load_config
-from .handlers import build_router
+from .handlers import BOT_COMMANDS, build_router
 from .keycloak_client import KeycloakService
 from .middleware import AdminOnlyMiddleware
 from .notifier import poll_login_events, poll_new_users
@@ -62,6 +62,7 @@ async def main() -> None:
 
     try:
         await bot.delete_webhook(drop_pending_updates=True)
+        await bot.set_my_commands(BOT_COMMANDS)
         await dp.start_polling(bot)
     finally:
         for task in poll_tasks:
