@@ -1,6 +1,6 @@
-🇬🇧 English | [🇷🇺 Русский](README.ru.md)
-
 # Telegram bot for managing Keycloak groups
+
+🇬🇧 **English** | [🇷🇺 Русский](README.ru.md)
 
 The bot can:
 - list groups and their members (`/groups`);
