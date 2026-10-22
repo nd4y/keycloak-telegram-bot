@@ -3,6 +3,7 @@
 🇬🇧 **English** | [🇷🇺 Русский](README.ru.md)
 
 The bot can:
+
 - list groups and their members (`/groups`);
 - list all users with pagination and a per-user card — their groups, add/remove group membership (`/users`);
 - create groups (`/newgroup Name`);
@@ -64,6 +65,7 @@ cp .env.example .env
 Fill in every field: `TELEGRAM_BOT_TOKEN`, `ADMIN_CHAT_IDS`, `KEYCLOAK_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`.
 
 `NOTIFY_NEW_USERS` / `NOTIFY_LOGINS` — the default notification state at container startup; flip them live with the bot's `/settings` command, no restart needed. `PERSIST_SETTINGS` decides whether a `/settings` toggle survives a container restart:
+
 - `false` (default) — after a restart the state falls back to `NOTIFY_NEW_USERS`/`NOTIFY_LOGINS`. Keep this if `data/` isn't mounted as persistent storage (e.g. Kubernetes without a PVC) — otherwise the toggle would appear to "save" but silently get lost on every pod recreation.
 - `true` — a `/settings` toggle is written to `data/settings.json` and survives a restart. Only enable this if `data/` is a real persistent volume/bind mount.
 
@@ -132,3 +134,7 @@ bot/
 - Only top-level groups are supported (no nested subgroups).
 - Notifications about new users and logins are polling-based, not instant on event; delay up to `POLL_INTERVAL_SECONDS`. Instant notifications would need a custom Keycloak Event Listener SPI on the server itself — a separate task if it's ever needed.
 - Login polling fetches the last 200 events per cycle; if more than 200 logins happen between polls, some notifications could be skipped (unlikely for a personal/small realm).
+
+## Development standard
+
+This repository adopts version 0.4.0 of the shared development standard. Read the [English guide](docs/en/development-standard.md) or [Russian guide](docs/ru/development-standard.md). The local toolkit checks staged secrets, changed-file formatting and bilingual documentation before merge. Existing product CI remains in place. Adoption is in progress; product acceptance and legacy-document translation are recorded separately in .repo-policy.json.
